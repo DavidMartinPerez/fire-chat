@@ -3,6 +3,7 @@ import { AngularFirestore, AngularFirestoreCollection, DocumentReference } from 
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Message } from '../interface/message.interface';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,16 +13,23 @@ export class ChatService {
   public chats: Message[] = [];
 
   constructor(
-    private afs: AngularFirestore
+    private afs: AngularFirestore,
+    private auth:AuthService
   ) {}
 
+  getMensajes = ref => ref.orderBy('fecha', 'desc').limit(5)
 
   cargarMensajes(): Observable<void> {
-    this.itemsCollection = this.afs.collection<Message>('chats');
+    this.itemsCollection = this.afs.collection<Message>('chats', this.getMensajes );
 
     return this.itemsCollection.valueChanges().pipe(
       map( (data: Message[]) => {
-        this.chats = data
+        this.chats = [];
+
+        for( let mensaje of data) {
+          this.chats.unshift(mensaje) //con unshitf añadimos al principio del array
+        }
+
       })
     )
   }
@@ -29,8 +37,9 @@ export class ChatService {
   enviarMensaje( texto_mensaje: string ) : Promise<DocumentReference> {
     let message: Message = {
       fecha: new Date().getTime(),
-      remitente: "David Prueba",
+      remitente: this.auth.usuario.remitente,
       mensaje: texto_mensaje,
+      uid: this.auth.usuario.uid
     }
 
     return this.itemsCollection.add( message )

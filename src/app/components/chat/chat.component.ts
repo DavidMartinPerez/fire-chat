@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { ChatService } from 'src/app/providers/chat.service';
+import { AuthService } from 'src/app/providers/auth.service';
 
 
 @Component({
@@ -10,11 +11,19 @@ import { ChatService } from 'src/app/providers/chat.service';
 export class ChatComponent implements OnInit {
 
   public mensaje:string = "";
+  public elemento: ElementRef
+
+  @ViewChild("appMensaje") elementChat: ElementRef 
 
   constructor(
-    public cs: ChatService
+    public cs: ChatService,
+    public auth: AuthService
   ) {
-    this.cs.cargarMensajes().subscribe()
+    this.cs.cargarMensajes().subscribe(
+      () => {
+        this.elementChat.nativeElement.scrollTop = this.elementChat.nativeElement.scrollHeight;
+      }
+    )
   }
 
   ngOnInit() {
@@ -25,7 +34,7 @@ export class ChatComponent implements OnInit {
 
     if ( this.mensaje.length > 0 ) {
       this.cs.enviarMensaje( this.mensaje )
-        .then ( () => console.log("Mensaje enviado") )
+        .then ( () => this.mensaje = "" )
         .catch( (err)=>console.error(err) )
     }
 
